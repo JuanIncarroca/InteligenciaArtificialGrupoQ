@@ -1,1 +1,637 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Evolución de la Inteligencia Artificial - Equipo Q#</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;800&display=swap');
+        
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #050510;
+            color: #ffffff;
+            overflow-x: hidden;
+        }
 
+        /* Glassmorphism Classes */
+        .glass-card {
+            background: rgba(255, 255, 255, 0.03);
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 1rem;
+            box-shadow: 0 4px 30px rgba(0, 0, 0, 0.1);
+        }
+
+        .glass-header {
+            background: rgba(5, 5, 16, 0.8);
+            backdrop-filter: blur(15px);
+            border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+        }
+
+        /* Gradients */
+        .text-gradient {
+            background: linear-gradient(135deg, #00f2fe 0%, #4facfe 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+        .text-gradient-purple {
+            background: linear-gradient(135deg, #a18cd1 0%, #fbc2eb 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+        .text-gradient-green {
+            background: linear-gradient(135deg, #43e97b 0%, #38f9d7 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        /* Custom Scrollbar */
+        ::-webkit-scrollbar { width: 8px; }
+        ::-webkit-scrollbar-track { background: #050510; }
+        ::-webkit-scrollbar-thumb { background: #4facfe; border-radius: 4px; }
+        ::-webkit-scrollbar-thumb:hover { background: #00f2fe; }
+
+        /* Canvas Background */
+        #network-canvas {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: -1;
+            opacity: 0.6;
+        }
+
+        /* View Transitions */
+        .view-section {
+            display: none;
+        }
+        .view-section.active {
+            display: block;
+            animation: fadeIn 0.5s ease-out forwards;
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(15px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        /* Simulation animations */
+        .typing-cursor::after {
+            content: '|';
+            animation: blink 1s step-start infinite;
+        }
+        @keyframes blink { 50% { opacity: 0; } }
+        
+        .agent-step { opacity: 0; transform: translateY(10px); transition: all 0.3s; }
+        .agent-step.active { opacity: 1; transform: translateY(0); }
+        
+        /* Navigation links */
+        .nav-link { transition: all 0.3s; cursor: pointer; }
+        .nav-link:hover { color: #fff; }
+    </style>
+</head>
+<body class="antialiased relative flex flex-col min-h-screen">
+
+    <!-- Animated Background -->
+    <canvas id="network-canvas"></canvas>
+
+    <!-- Header & Navigation -->
+    <header class="glass-header fixed w-full top-0 z-50">
+        <div class="py-4 px-6 md:px-12 flex justify-between items-center">
+            <div class="flex items-center gap-3 cursor-pointer" onclick="switchView('home')">
+                <i class="fas fa-brain text-2xl text-[#00f2fe]"></i>
+                <h1 class="text-xl md:text-2xl font-bold tracking-tight">IA Evolución</h1>
+            </div>
+            <div class="hidden md:flex items-center gap-6 font-semibold">
+                <span id="nav-home" onclick="switchView('home')" class="nav-link text-[#00f2fe] border-b-2 border-[#00f2fe] pb-1">Inicio</span>
+                <span id="nav-tradicional" onclick="switchView('tradicional')" class="nav-link text-gray-400 pb-1">IA Tradicional</span>
+                <span id="nav-generativa" onclick="switchView('generativa')" class="nav-link text-gray-400 pb-1">IA Generativa</span>
+                <span id="nav-agentica" onclick="switchView('agentica')" class="nav-link text-gray-400 pb-1">IA Agéntica</span>
+            </div>
+            <!-- Mobile Menu Toggle -->
+            <button class="md:hidden text-white" onclick="toggleMobileMenu()">
+                <i class="fas fa-bars text-2xl"></i>
+            </button>
+        </div>
+        <!-- Mobile Navigation Menu -->
+        <div id="mobile-menu" class="hidden md:hidden bg-[#050510]/95 border-b border-white/10 px-6 py-4 flex flex-col gap-4 font-semibold">
+            <span onclick="switchView('home'); toggleMobileMenu()" class="nav-link text-[#00f2fe]">Inicio</span>
+            <span onclick="switchView('tradicional'); toggleMobileMenu()" class="nav-link text-gray-400">IA Tradicional</span>
+            <span onclick="switchView('generativa'); toggleMobileMenu()" class="nav-link text-gray-400">IA Generativa</span>
+            <span onclick="switchView('agentica'); toggleMobileMenu()" class="nav-link text-gray-400">IA Agéntica</span>
+        </div>
+    </header>
+
+    <!-- Main Content Container -->
+    <main class="pt-32 pb-20 px-4 md:px-8 lg:px-16 max-w-7xl mx-auto flex-grow w-full">
+
+        <!-- ================= PAGE: INICIO ================= -->
+        <div id="view-home" class="view-section active space-y-16">
+            <!-- Hero Section -->
+            <section class="text-center space-y-6 max-w-4xl mx-auto">
+                <div class="inline-block px-4 py-1 rounded-full border border-[#00f2fe]/30 bg-[#00f2fe]/10 text-[#00f2fe] text-sm mb-4">
+                    Enfoque Tradicional vs Enfoque con IA de Red Neuronal
+                </div>
+                <h2 class="text-4xl md:text-6xl font-extrabold leading-tight">
+                    De las Reglas a la <br>
+                    <span class="text-gradient">Autonomía Absoluta</span>
+                </h2>
+                <p class="text-lg text-gray-300">
+                    La inteligencia artificial ha evolucionado desde sistemas rígidos basados en reglas hasta entidades dinámicas capaces de actuar de forma autónoma. Selecciona en el menú de arriba para explorar los tres pilares fundamentales en el ecosistema tecnológico actual.
+                </p>
+                <div class="flex justify-center gap-4 pt-6 flex-wrap">
+                    <button onclick="switchView('tradicional')" class="px-6 py-3 rounded-lg border border-blue-500 text-blue-400 hover:bg-blue-500/10 transition-colors">
+                        <i class="fas fa-filter mr-2"></i> Tradicional
+                    </button>
+                    <button onclick="switchView('generativa')" class="px-6 py-3 rounded-lg border border-purple-500 text-purple-400 hover:bg-purple-500/10 transition-colors">
+                        <i class="fas fa-magic mr-2"></i> Generativa
+                    </button>
+                    <button onclick="switchView('agentica')" class="px-6 py-3 rounded-lg border border-green-500 text-green-400 hover:bg-green-500/10 transition-colors">
+                        <i class="fas fa-robot mr-2"></i> Agéntica
+                    </button>
+                </div>
+            </section>
+
+            <!-- Tabla Comparativa -->
+            <section class="space-y-6">
+                <h3 class="text-2xl font-bold text-center mb-8">Tabla Comparativa de Paradigmas</h3>
+                <div class="overflow-x-auto">
+                    <table class="w-full text-left border-collapse glass-card overflow-hidden">
+                        <thead>
+                            <tr class="bg-white/10 text-gray-200">
+                                <th class="p-4 border-b border-white/10 font-bold">Función</th>
+                                <th class="p-4 border-b border-white/10 font-bold text-blue-400">IA Tradicional</th>
+                                <th class="p-4 border-b border-white/10 font-bold text-purple-400">IA Generativa</th>
+                                <th class="p-4 border-b border-white/10 font-bold text-green-400">IA Agéntica</th>
+                            </tr>
+                        </thead>
+                        <tbody class="text-sm md:text-base text-gray-300">
+                            <tr class="border-b border-white/5 hover:bg-white/5 transition-colors">
+                                <td class="p-4 font-semibold text-white">Rol Primario</td>
+                                <td class="p-4">Análisis y clasificación.</td>
+                                <td class="p-4">Creación y síntesis.</td>
+                                <td class="p-4">Ejecución y autonomía.</td>
+                            </tr>
+                            <tr class="border-b border-white/5 hover:bg-white/5 transition-colors">
+                                <td class="p-4 font-semibold text-white">Naturaleza</td>
+                                <td class="p-4">Reactiva y determinista.</td>
+                                <td class="p-4">Reactiva y probabilística.</td>
+                                <td class="p-4">Proactiva y autónoma.</td>
+                            </tr>
+                            <tr class="border-b border-white/5 hover:bg-white/5 transition-colors">
+                                <td class="p-4 font-semibold text-white">Datos</td>
+                                <td class="p-4">Estructurados y etiquetados.</td>
+                                <td class="p-4">Masivos no estructurados.</td>
+                                <td class="p-4">Dinámicos y multi-herramienta.</td>
+                            </tr>
+                            <tr class="hover:bg-white/5 transition-colors">
+                                <td class="p-4 font-semibold text-white">Dependencia</td>
+                                <td class="p-4">Alta (reglas definidas).</td>
+                                <td class="p-4">Media (requiere prompts).</td>
+                                <td class="p-4">Baja (independencia operativa).</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </section>
+
+            <!-- Simulaciones Avanzadas y Consideraciones -->
+            <section class="grid md:grid-cols-2 gap-8">
+                <div class="glass-card p-6 border-t-4 border-t-yellow-500">
+                    <h4 class="text-xl font-bold mb-4 text-yellow-500"><i class="fas fa-city mr-2"></i>Simulaciones Avanzadas</h4>
+                    <div class="space-y-4 text-gray-300 text-sm">
+                        <p><strong>ChatDev y MetaGPT:</strong> Simulan una empresa completa de desarrollo de software. Los agentes asumen roles (CEO, CTO, programador, tester) colaborando en una "ChatChain" para crear apps en minutos.</p>
+                        <p><strong>Simulaciones Urbanas y Económicas:</strong> Agentes simulan comportamiento ciudadano en ciudades sustentables o inversores en mercados financieros, para prever impactos de políticas macroeconómicas.</p>
+                    </div>
+                </div>
+                
+                <div class="glass-card p-6 border-t-4 border-t-pink-500">
+                    <h4 class="text-xl font-bold mb-4 text-pink-500"><i class="fas fa-balance-scale mr-2"></i>Consideraciones Finales</h4>
+                    <div class="space-y-4 text-gray-300 text-sm">
+                        <p><strong>Enfoque Híbrido:</strong> El futuro requiere que trabajen en conjunto. <em>Ej: IA predictiva identifica demanda, IA generativa sugiere diseño, IA agéntica coordina logística.</em></p>
+                        <p><strong>IA Responsable:</strong> Ante la mayor autonomía, urgen marcos de gobierno: transparencia (IA explicable/XAI), equidad frente a sesgos y supervisión (human-in-the-loop) para mitigar riesgos.</p>
+                    </div>
+                </div>
+            </section>
+        </div>
+
+
+        <!-- ================= PAGE: IA TRADICIONAL ================= -->
+        <div id="view-tradicional" class="view-section">
+            <button onclick="switchView('home')" class="mb-6 text-gray-400 hover:text-white transition-colors"><i class="fas fa-arrow-left mr-2"></i>Volver al inicio</button>
+            <section class="glass-card p-6 md:p-10 flex flex-col lg:flex-row gap-8 border-[#00f2fe]/30">
+                <div class="flex-1 space-y-6">
+                    <div class="flex items-center gap-4">
+                        <div class="p-3 rounded-lg bg-blue-500/20 text-blue-400">
+                            <i class="fas fa-filter fa-2x"></i>
+                        </div>
+                        <h3 class="text-4xl font-bold text-gradient">IA Tradicional</h3>
+                    </div>
+                    <p class="text-gray-300 text-lg"><strong>Definición:</strong> También conocida como "IA estrecha", es un sistema basado en reglas o determinista, entrenado para completar tareas preprogramadas o conjuntos de tareas bien definidos. Su objetivo principal es el análisis de datos para la clasificación y la predicción.</p>
+                    <p class="text-gray-300 text-lg"><strong>Diferencias:</strong> Es reactiva y rígida; opera bajo la premisa de que para cada entrada hay una respuesta "correcta" predefinida y no toma decisiones independientes más allá de su programación.</p>
+                    
+                    <div class="grid md:grid-cols-2 gap-4 mt-8">
+                        <div class="bg-black/30 p-5 rounded-lg border border-white/5">
+                            <h4 class="text-blue-400 font-bold text-lg mb-3"><i class="fas fa-project-diagram mr-2"></i>Modelos Utilizados</h4>
+                            <ul class="list-disc list-inside text-gray-300 space-y-2">
+                                <li>Máquinas de Vector de Soporte (SVM)</li>
+                                <li>Bosques Aleatorios y Árboles de decisión</li>
+                                <li>Redes Neuronales Convolucionales (CNN)</li>
+                                <li>Regresión logística y Naive Bayes</li>
+                            </ul>
+                        </div>
+                        <div class="bg-black/30 p-5 rounded-lg border border-white/5">
+                            <h4 class="text-blue-400 font-bold text-lg mb-3"><i class="fas fa-briefcase mr-2"></i>Casos de Uso Comunes</h4>
+                            <ul class="list-disc list-inside text-gray-300 space-y-2">
+                                <li>Detección de fraude bancario (desviación de patrones)</li>
+                                <li>Filtros de spam automáticos en correos</li>
+                                <li>Asistentes básicos (ej. Siri comandos simples)</li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Simulacion IA Tradicional -->
+                <div class="flex-1 bg-[#0a0a1a] rounded-xl border border-blue-900/50 p-8 flex flex-col items-center justify-center text-center">
+                    <div class="bg-blue-900/20 p-4 rounded-full mb-4">
+                        <i class="fas fa-shield-alt text-4xl text-blue-400"></i>
+                    </div>
+                    <h4 class="text-2xl font-bold mb-2">Simulación: Detección de Fraude</h4>
+                    <p class="text-gray-400 mb-8">Sistema basado en reglas rígidas (Clasificación de transacciones)</p>
+                    
+                    <div class="w-full max-w-md space-y-6">
+                        <div id="trad-input" class="p-6 bg-gray-900 rounded-lg border border-gray-700 font-mono text-base text-left">
+                            <span class="text-gray-500">// Esperando datos de entrada...</span>
+                        </div>
+                        <button onclick="runTraditionalSim()" class="px-6 py-3 bg-blue-600 hover:bg-blue-500 text-white rounded-lg font-bold text-lg transition-colors w-full shadow-lg shadow-blue-500/30">
+                            Analizar Nueva Transacción
+                        </button>
+                        <div id="trad-output" class="p-6 rounded-lg border-2 border-dashed border-gray-600 text-gray-400 font-mono text-base min-h-[80px] flex items-center justify-center transition-all">
+                            Resultado del clasificador
+                        </div>
+                    </div>
+                </div>
+            </section>
+        </div>
+
+
+        <!-- ================= PAGE: IA GENERATIVA ================= -->
+        <div id="view-generativa" class="view-section">
+            <button onclick="switchView('home')" class="mb-6 text-gray-400 hover:text-white transition-colors"><i class="fas fa-arrow-left mr-2"></i>Volver al inicio</button>
+            <section class="glass-card p-6 md:p-10 flex flex-col lg:flex-row-reverse gap-8 border-[#a18cd1]/30">
+                <div class="flex-1 space-y-6">
+                    <div class="flex items-center gap-4">
+                        <div class="p-3 rounded-lg bg-purple-500/20 text-purple-400">
+                            <i class="fas fa-magic fa-2x"></i>
+                        </div>
+                        <h3 class="text-4xl font-bold text-gradient-purple">IA Generativa</h3>
+                    </div>
+                    <p class="text-gray-300 text-lg"><strong>Definición:</strong> Es un tipo de IA centrada en la creación de contenido original, como texto, imágenes, audio, video y código, a partir de patrones aprendidos de vastos conjuntos de datos.</p>
+                    <p class="text-gray-300 text-lg"><strong>Diferencias:</strong> A diferencia de la tradicional, no solo clasifica sino que produce contenido nuevo. Es considerada "reactiva" porque genera resultados principalmente en respuesta a una petición o <em>prompt</em> humano.</p>
+                    
+                    <div class="grid md:grid-cols-2 gap-4 mt-8">
+                        <div class="bg-black/30 p-5 rounded-lg border border-white/5">
+                            <h4 class="text-purple-400 font-bold text-lg mb-3"><i class="fas fa-network-wired mr-2"></i>Arquitecturas</h4>
+                            <ul class="list-disc list-inside text-gray-300 space-y-2">
+                                <li>Transformadores (Base de GPT-4, PaLM 2, Claude)</li>
+                                <li>Redes Generativas Antagónicas (GAN)</li>
+                                <li>Modelos de Difusión (Midjourney, DALL-E)</li>
+                                <li>Autocodificadores Variacionales (VAE)</li>
+                            </ul>
+                        </div>
+                        <div class="bg-black/30 p-5 rounded-lg border border-white/5">
+                            <h4 class="text-purple-400 font-bold text-lg mb-3"><i class="fas fa-paint-brush mr-2"></i>Casos de Uso</h4>
+                            <ul class="list-disc list-inside text-gray-300 space-y-2">
+                                <li>Creación de contenido: artículos, guiones, arte</li>
+                                <li>Desarrollo de software y autocompletado de código</li>
+                                <li>Datos sintéticos para entrenar otras IAs</li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Simulacion IA Generativa -->
+                <div class="flex-1 bg-[#0a0a1a] rounded-xl border border-purple-900/50 p-8 flex flex-col items-center justify-center text-center">
+                    <div class="bg-purple-900/20 p-4 rounded-full mb-4">
+                        <i class="fas fa-code text-4xl text-purple-400"></i>
+                    </div>
+                    <h4 class="text-2xl font-bold mb-2">Simulación: Generador de Código</h4>
+                    <p class="text-gray-400 mb-8">Creación de contenido original a partir de un Prompt</p>
+                    
+                    <div class="w-full max-w-md space-y-6">
+                        <div class="text-left bg-gray-900 p-4 rounded-lg border border-gray-700">
+                            <span class="text-purple-400 font-bold block mb-1">Human Prompt:</span> 
+                            <span class="text-gray-200 text-lg">"Escribe una función en JavaScript para sumar dos números"</span>
+                        </div>
+                        <button onclick="runGenerativeSim()" id="gen-btn" class="px-6 py-3 bg-purple-600 hover:bg-purple-500 text-white rounded-lg font-bold text-lg transition-colors w-full shadow-lg shadow-purple-500/30">
+                            Generar Respuesta
+                        </button>
+                        <div class="bg-black p-6 rounded-lg border border-gray-700 text-left h-48 overflow-hidden relative">
+                            <pre id="gen-output" class="text-green-400 font-mono text-base whitespace-pre-wrap"></pre>
+                        </div>
+                    </div>
+                </div>
+            </section>
+        </div>
+
+
+        <!-- ================= PAGE: IA AGÉNTICA ================= -->
+        <div id="view-agentica" class="view-section">
+            <button onclick="switchView('home')" class="mb-6 text-gray-400 hover:text-white transition-colors"><i class="fas fa-arrow-left mr-2"></i>Volver al inicio</button>
+            <section class="glass-card p-6 md:p-10 flex flex-col lg:flex-row gap-8 border-[#43e97b]/30">
+                <div class="flex-1 space-y-6">
+                    <div class="flex items-center gap-4">
+                        <div class="p-3 rounded-lg bg-green-500/20 text-green-400">
+                            <i class="fas fa-robot fa-2x"></i>
+                        </div>
+                        <h3 class="text-4xl font-bold text-gradient-green">IA Agéntica</h3>
+                    </div>
+                    <p class="text-gray-300 text-lg"><strong>Definición:</strong> Describe sistemas que pueden funcionar de forma autónoma, tomando decisiones y realizando acciones para alcanzar objetivos complejos con una intervención humana mínima. Percibe su entorno, razona y ejecuta pasos utilizando herramientas externas.</p>
+                    <p class="text-gray-300 text-lg"><strong>Diferencias:</strong> Mientras que la GenAI es reactiva, la IA agéntica es <em>proactiva</em>. No solo genera una respuesta, sino que ajusta su plan y estrategia según las condiciones cambiantes del entorno.</p>
+                    
+                    <div class="grid md:grid-cols-2 gap-4 mt-8">
+                        <div class="bg-black/30 p-5 rounded-lg border border-white/5">
+                            <h4 class="text-green-400 font-bold text-lg mb-3"><i class="fas fa-sitemap mr-2"></i>Arquitecturas</h4>
+                            <ul class="list-disc list-inside text-gray-300 space-y-2">
+                                <li>ReAct (Reason + Act): Razonamiento paso a paso</li>
+                                <li>Sistemas Multiagente (MAS): Equipos de agentes</li>
+                                <li>Planificación avanzada y Memoria iterativa</li>
+                            </ul>
+                        </div>
+                        <div class="bg-black/30 p-5 rounded-lg border border-white/5">
+                            <h4 class="text-green-400 font-bold text-lg mb-3"><i class="fas fa-check-circle mr-2"></i>Casos de Uso</h4>
+                            <ul class="list-disc list-inside text-gray-300 space-y-2">
+                                <li>Suscripción de crédito autónoma multi-fuente</li>
+                                <li>Gestión de TI: detección y corrección de anomalías</li>
+                                <li>Atención médica: monitoreo y alerta predictiva</li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Simulacion IA Agentica -->
+                <div class="flex-1 bg-[#0a0a1a] rounded-xl border border-green-900/50 p-8 flex flex-col items-center justify-center text-center">
+                    <div class="bg-green-900/20 p-4 rounded-full mb-4">
+                        <i class="fas fa-cogs text-4xl text-green-400"></i>
+                    </div>
+                    <h4 class="text-2xl font-bold mb-2">Simulación: Agente de TI</h4>
+                    <p class="text-gray-400 mb-8">Razonamiento autónomo y ejecución multi-herramienta</p>
+                    
+                    <div class="w-full max-w-md space-y-6">
+                        <button onclick="runAgenticSim()" id="agent-btn" class="px-6 py-3 bg-green-600 hover:bg-green-500 text-white rounded-lg font-bold text-lg transition-colors w-full shadow-lg shadow-green-500/30">
+                            Desplegar Agente en Servidor
+                        </button>
+                        <div class="bg-black p-6 rounded-lg border border-gray-700 text-left min-h-[220px] flex flex-col gap-4">
+                            <div id="step-1" class="agent-step hidden text-sm text-gray-300"><i class="fas fa-eye text-blue-400 mr-3 text-lg"></i><strong>Observación:</strong> Anomalía crítica en Servidor de Base de Datos detectada.</div>
+                            <div id="step-2" class="agent-step hidden text-sm text-gray-300"><i class="fas fa-brain text-purple-400 mr-3 text-lg"></i><strong>Razonamiento:</strong> El log muestra una fuga de memoria por consulta colgada. Debo matar el proceso.</div>
+                            <div id="step-3" class="agent-step hidden text-sm text-gray-300"><i class="fas fa-terminal text-orange-400 mr-3 text-lg"></i><strong>Acción:</strong> Ejecutando herramienta [SSH_KILL_PID 5432]...</div>
+                            <div id="step-4" class="agent-step hidden text-base text-green-400 font-bold mt-2"><i class="fas fa-check-circle mr-3 text-lg"></i>Objetivo Cumplido: Entorno estabilizado exitosamente.</div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+        </div>
+
+    </main>
+
+    <!-- Footer / Credits (Visible in all pages) -->
+    <footer class="bg-black/80 border-t border-white/10 py-10 mt-auto">
+        <div class="max-w-7xl mx-auto px-6 grid md:grid-cols-3 gap-8 text-center md:text-left">
+            <div>
+                <h4 class="font-bold text-lg mb-2 text-white">Universidad Andina del Cusco</h4>
+                <p class="text-sm text-gray-400">Facultad de Ingeniería y Arquitectura</p>
+                <p class="text-sm text-gray-400">Escuela Profesional de Ingeniería de Sistemas</p>
+                <p class="text-sm text-gray-400 mt-2">Cusco - Perú | 2026</p>
+            </div>
+            <div>
+                <h4 class="font-bold text-lg mb-2 text-[#00f2fe]">Asignatura</h4>
+                <p class="text-sm text-gray-300">Inteligencia Artificial 10-A</p>
+                <p class="text-sm text-gray-400 mt-2"><strong>Docente:</strong> Espetia Huamanga, Hugo</p>
+            </div>
+            <div>
+                <h4 class="font-bold text-lg mb-2 text-gradient-purple">Equipo: Q#</h4>
+                <ul class="text-sm text-gray-300 space-y-1">
+                    <li><i class="fas fa-user-graduate mr-2 text-gray-500"></i>Cardenas Quispe, Marco Antonio</li>
+                    <li><i class="fas fa-user-graduate mr-2 text-gray-500"></i>Incarroca Condori Juan Jose</li>
+                    <li><i class="fas fa-user-graduate mr-2 text-gray-500"></i>Paucar Curasco Rodrigo</li>
+                    <li><i class="fas fa-user-graduate mr-2 text-gray-500"></i>Yupayccana Kcana, Jamil Breison (SM)</li>
+                </ul>
+            </div>
+        </div>
+    </footer>
+
+    <!-- Scripts -->
+    <script>
+        // --- Navigation Logic (Single Page Application Router) ---
+        function switchView(viewId) {
+            // Hide all views
+            document.querySelectorAll('.view-section').forEach(el => {
+                el.classList.remove('active');
+            });
+            
+            // Show target view
+            const targetView = document.getElementById('view-' + viewId);
+            if(targetView) {
+                targetView.classList.add('active');
+            }
+
+            // Update Desktop Nav styles
+            document.querySelectorAll('.nav-link').forEach(el => {
+                el.classList.remove('text-[#00f2fe]', 'border-b-2', 'border-[#00f2fe]');
+                el.classList.add('text-gray-400');
+            });
+            
+            const activeLinks = document.querySelectorAll('#nav-' + viewId);
+            activeLinks.forEach(link => {
+                link.classList.remove('text-gray-400');
+                link.classList.add('text-[#00f2fe]', 'border-b-2', 'border-[#00f2fe]');
+            });
+
+            // Scroll to top
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        }
+
+        function toggleMobileMenu() {
+            const menu = document.getElementById('mobile-menu');
+            menu.classList.toggle('hidden');
+        }
+
+
+        // --- 1. Network Background Animation ---
+        const canvas = document.getElementById('network-canvas');
+        const ctx = canvas.getContext('2d');
+        let particlesArray;
+
+        canvas.width = window.innerWidth;
+        canvas.height = window.innerHeight;
+
+        class Particle {
+            constructor(x, y, directionX, directionY, size, color) {
+                this.x = x; this.y = y;
+                this.directionX = directionX; this.directionY = directionY;
+                this.size = size; this.color = color;
+            }
+            draw() {
+                ctx.beginPath();
+                ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2, false);
+                ctx.fillStyle = '#4facfe';
+                ctx.fill();
+            }
+            update() {
+                if (this.x > canvas.width || this.x < 0) this.directionX = -this.directionX;
+                if (this.y > canvas.height || this.y < 0) this.directionY = -this.directionY;
+                this.x += this.directionX;
+                this.y += this.directionY;
+                this.draw();
+            }
+        }
+
+        function initBackground() {
+            particlesArray = [];
+            let numberOfParticles = (canvas.height * canvas.width) / 15000;
+            for (let i = 0; i < numberOfParticles; i++) {
+                let size = (Math.random() * 2) + 1;
+                let x = (Math.random() * ((innerWidth - size * 2) - (size * 2)) + size * 2);
+                let y = (Math.random() * ((innerHeight - size * 2) - (size * 2)) + size * 2);
+                let directionX = (Math.random() * 0.4) - 0.2;
+                let directionY = (Math.random() * 0.4) - 0.2;
+                particlesArray.push(new Particle(x, y, directionX, directionY, size, '#fff'));
+            }
+        }
+
+        function animateBackground() {
+            requestAnimationFrame(animateBackground);
+            ctx.clearRect(0, 0, innerWidth, innerHeight);
+            
+            for (let i = 0; i < particlesArray.length; i++) {
+                particlesArray[i].update();
+                for (let j = i; j < particlesArray.length; j++) {
+                    let distance = ((particlesArray[i].x - particlesArray[j].x) * (particlesArray[i].x - particlesArray[j].x))
+                                 + ((particlesArray[i].y - particlesArray[j].y) * (particlesArray[i].y - particlesArray[j].y));
+                    if (distance < 15000) {
+                        ctx.beginPath();
+                        ctx.strokeStyle = 'rgba(79, 172, 254, 0.1)';
+                        ctx.lineWidth = 1;
+                        ctx.moveTo(particlesArray[i].x, particlesArray[i].y);
+                        ctx.lineTo(particlesArray[j].x, particlesArray[j].y);
+                        ctx.stroke();
+                    }
+                }
+            }
+        }
+
+        window.addEventListener('resize', () => {
+            canvas.width = innerWidth; canvas.height = innerHeight;
+            initBackground();
+        });
+
+        initBackground();
+        animateBackground();
+
+
+        // --- 2. Simulations Logic ---
+
+        // A. Traditional AI
+        const transactions = [
+            { id: "TRX-891", amount: "S/. 45.00", loc: "Cusco, PE", type: "normal" },
+            { id: "TRX-892", amount: "S/. 15,000.00", loc: "IP Rusia", type: "fraud" },
+            { id: "TRX-893", amount: "S/. 12.50", loc: "Arequipa, PE", type: "normal" }
+        ];
+        let tradIndex = 0;
+
+        function runTraditionalSim() {
+            const input = document.getElementById('trad-input');
+            const output = document.getElementById('trad-output');
+            
+            let data = transactions[tradIndex];
+            input.innerHTML = `<span class="text-blue-400">ID:</span> ${data.id}<br><span class="text-blue-400">Monto:</span> ${data.amount}<br><span class="text-blue-400">Origen:</span> ${data.loc}`;
+            output.innerHTML = `<i class="fas fa-spinner fa-spin text-blue-400 mr-2"></i> Procesando reglas...`;
+            output.className = "p-6 rounded-lg border-2 border-dashed border-gray-600 text-gray-400 font-mono text-base min-h-[80px] flex items-center justify-center";
+
+            setTimeout(() => {
+                if(data.type === "normal") {
+                    output.innerHTML = `<span class="text-green-400 font-bold"><i class="fas fa-check-circle mr-2 text-xl"></i> APROBADO (Patrón Normal)</span>`;
+                    output.className = "p-6 rounded-lg border-2 border-green-500 bg-green-900/20 font-mono text-base min-h-[80px] flex items-center justify-center";
+                } else {
+                    output.innerHTML = `<span class="text-red-400 font-bold"><i class="fas fa-times-circle mr-2 text-xl"></i> BLOQUEADO (Alerta Fraude)</span>`;
+                    output.className = "p-6 rounded-lg border-2 border-red-500 bg-red-900/20 font-mono text-base min-h-[80px] flex items-center justify-center";
+                }
+                tradIndex = (tradIndex + 1) % transactions.length;
+            }, 800);
+        }
+
+        // B. Generative AI
+        const codeSnippet = `function sumarNumeros(a, b) {
+  // Código generado por IA Generativa
+  if(typeof a !== 'number' || typeof b !== 'number') {
+    return "Error: Valores no numéricos";
+  }
+  return a + b;
+}`;
+        let genIsTyping = false;
+
+        function runGenerativeSim() {
+            if(genIsTyping) return;
+            genIsTyping = true;
+            const output = document.getElementById('gen-output');
+            const btn = document.getElementById('gen-btn');
+            output.innerHTML = '';
+            output.classList.add('typing-cursor');
+            btn.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i> Sintetizando...';
+            btn.disabled = true;
+
+            let i = 0;
+            let interval = setInterval(() => {
+                output.innerHTML += codeSnippet.charAt(i);
+                i++;
+                if (i >= codeSnippet.length) {
+                    clearInterval(interval);
+                    output.classList.remove('typing-cursor');
+                    btn.innerHTML = 'Generar de Nuevo';
+                    btn.disabled = false;
+                    genIsTyping = false;
+                }
+            }, 40); // Velocidad de tipeo
+        }
+
+        // C. Agentic AI
+        let agentRunning = false;
+        function runAgenticSim() {
+            if(agentRunning) return;
+            agentRunning = true;
+            const btn = document.getElementById('agent-btn');
+            btn.innerHTML = '<i class="fas fa-cog fa-spin mr-2"></i> Agente en ejecución...';
+            btn.disabled = true;
+
+            // Reset steps
+            for(let i=1; i<=4; i++) {
+                let el = document.getElementById(`step-${i}`);
+                el.classList.remove('active', 'block');
+                el.classList.add('hidden');
+            }
+
+            // Execute sequence
+            let currentStep = 1;
+            function nextStep() {
+                if(currentStep <= 4) {
+                    let el = document.getElementById(`step-${currentStep}`);
+                    el.classList.remove('hidden');
+                    // Small delay for CSS transition to catch
+                    setTimeout(() => { el.classList.add('active'); }, 50);
+                    currentStep++;
+                    setTimeout(nextStep, 1200); // 1.2 segundos por paso para que se lea
+                } else {
+                    btn.innerHTML = '<i class="fas fa-redo mr-2"></i> Reiniciar Agente';
+                    btn.disabled = false;
+                    agentRunning = false;
+                }
+            }
+            nextStep();
+        }
+    </script>
+</body>
+</html>
