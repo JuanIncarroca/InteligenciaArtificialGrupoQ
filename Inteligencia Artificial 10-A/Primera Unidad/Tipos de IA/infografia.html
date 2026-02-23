@@ -319,19 +319,24 @@
                     <div class="bg-purple-900/20 p-4 rounded-full mb-4">
                         <i class="fas fa-code text-4xl text-purple-400"></i>
                     </div>
-                    <h4 class="text-2xl font-bold mb-2">Simulación: Generador de Código</h4>
-                    <p class="text-gray-400 mb-8">Creación de contenido original a partir de un Prompt</p>
+                    <h4 class="text-2xl font-bold mb-2">Simulación: Gemini e Imagen en Vivo</h4>
+                    <p class="text-gray-400 mb-6">Pídele a la IA que redacte un texto o pinte una imagen.</p>
                     
-                    <div class="w-full max-w-md space-y-6">
-                        <div class="text-left bg-gray-900 p-4 rounded-lg border border-gray-700">
-                            <span class="text-purple-400 font-bold block mb-1">Human Prompt:</span> 
-                            <span class="text-gray-200 text-lg">"Escribe una función en JavaScript para sumar dos números"</span>
+                    <div class="w-full max-w-md space-y-4">
+                        <div class="text-left bg-gray-900 p-4 rounded-lg border border-gray-700 focus-within:border-purple-500 transition-colors">
+                            <label for="gen-prompt-input" class="text-purple-400 font-bold block mb-2">Tu Prompt (En Vivo):</label> 
+                            <textarea id="gen-prompt-input" rows="2" class="w-full bg-black/50 text-gray-200 p-2 rounded border border-gray-700 focus:outline-none focus:border-purple-500 resize-none text-sm" placeholder="Ej: Escribe un poema corto... o Un robot cyberpunk pintando un cuadro..."></textarea>
                         </div>
-                        <button onclick="runGenerativeSim()" id="gen-btn" class="px-6 py-3 bg-purple-600 hover:bg-purple-500 text-white rounded-lg font-bold text-lg transition-colors w-full shadow-lg shadow-purple-500/30">
-                            Generar Respuesta
-                        </button>
-                        <div class="bg-black p-6 rounded-lg border border-gray-700 text-left h-48 overflow-hidden relative">
-                            <pre id="gen-output" class="text-green-400 font-mono text-base whitespace-pre-wrap"></pre>
+                        <div class="flex gap-3">
+                            <button onclick="runGenerativeSim('text')" id="gen-btn-text" class="flex-1 px-4 py-3 bg-purple-600 hover:bg-purple-500 text-white rounded-lg font-bold text-sm transition-colors shadow-lg shadow-purple-500/30">
+                                <i class="fas fa-align-left mr-2"></i> Generar Texto
+                            </button>
+                            <button onclick="runGenerativeSim('image')" id="gen-btn-img" class="flex-1 px-4 py-3 bg-pink-600 hover:bg-pink-500 text-white rounded-lg font-bold text-sm transition-colors shadow-lg shadow-pink-500/30">
+                                <i class="fas fa-image mr-2"></i> Generar Imagen
+                            </button>
+                        </div>
+                        <div class="bg-black p-4 rounded-lg border border-gray-700 text-left h-64 relative flex flex-col items-center justify-center overflow-hidden">
+                            <div id="gen-output" class="text-green-400 font-mono text-sm whitespace-pre-wrap w-full h-full overflow-y-auto scrollbar-thin scrollbar-thumb-purple-500 flex flex-col items-center justify-center"></div>
                         </div>
                     </div>
                 </div>
@@ -564,38 +569,134 @@
             }, 800);
         }
 
-        // B. Generative AI
-        const codeSnippet = `function sumarNumeros(a, b) {
-  // Código generado por IA Generativa
-  if(typeof a !== 'number' || typeof b !== 'number') {
-    return "Error: Valores no numéricos";
-  }
-  return a + b;
-}`;
+        // B. Generative AI (Con API Real de Gemini e Imagen)
         let genIsTyping = false;
 
-        function runGenerativeSim() {
+        async function fetchGeminiWithRetry(prompt, retries = 5) {
+            const apiKey = ""; // El entorno inyecta la clave automáticamente
+            const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-09-2025:generateContent?key=${apiKey}`;
+            const payload = {
+                contents: [{ parts: [{ text: prompt }] }],
+                systemInstruction: { parts: [{ text: "Eres una IA demostrativa en una infografía universitaria del Equipo Q#. Responde de forma concisa (máximo 100 palabras) y útil." }] }
+            };
+
+            const delays = [1000, 2000, 4000, 8000, 16000];
+
+            for (let i = 0; i < retries; i++) {
+                try {
+                    const response = await fetch(url, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(payload)
+                    });
+                    
+                    if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+                    
+                    const data = await response.json();
+                    return data.candidates?.[0]?.content?.parts?.[0]?.text || "Error al leer la respuesta de la API.";
+                } catch (error) {
+                    if (i === retries - 1) return "Error de conexión con la IA. Por favor, intenta de nuevo más tarde.";
+                    await new Promise(res => setTimeout(res, delays[i]));
+                }
+            }
+        }
+
+        async function fetchImagenWithRetry(prompt, retries = 5) {
+            const apiKey = ""; // El entorno inyecta la clave
+            const url = `https://generativelanguage.googleapis.com/v1beta/models/imagen-4.0-generate-001:predict?key=${apiKey}`;
+            const payload = {
+                instances: { prompt: prompt },
+                parameters: { sampleCount: 1 }
+            };
+
+            const delays = [1000, 2000, 4000, 8000, 16000];
+
+            for (let i = 0; i < retries; i++) {
+                try {
+                    const response = await fetch(url, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(payload)
+                    });
+                    
+                    if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+                    
+                    const data = await response.json();
+                    return `data:image/png;base64,${data.predictions[0].bytesBase64Encoded}`;
+                } catch (error) {
+                    if (i === retries - 1) return null;
+                    await new Promise(res => setTimeout(res, delays[i]));
+                }
+            }
+        }
+
+        async function runGenerativeSim(type = 'text') {
             if(genIsTyping) return;
+            
+            const inputEl = document.getElementById('gen-prompt-input');
+            let promptText = inputEl.value.trim();
+            
+            // Prompts por defecto si el usuario no escribe nada
+            if (!promptText) {
+                promptText = type === 'text' 
+                    ? "Escribe un dato curioso sobre la Inteligencia Artificial de máximo 2 líneas." 
+                    : "Un cerebro brillante de neon al estilo cyberpunk, arte digital de alta calidad";
+            }
+            
             genIsTyping = true;
             const output = document.getElementById('gen-output');
-            const btn = document.getElementById('gen-btn');
+            const btnText = document.getElementById('gen-btn-text');
+            const btnImg = document.getElementById('gen-btn-img');
+            
             output.innerHTML = '';
-            output.classList.add('typing-cursor');
-            btn.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i> Sintetizando...';
-            btn.disabled = true;
+            btnText.disabled = true;
+            btnImg.disabled = true;
 
-            let i = 0;
-            let interval = setInterval(() => {
-                output.innerHTML += codeSnippet.charAt(i);
-                i++;
-                if (i >= codeSnippet.length) {
-                    clearInterval(interval);
-                    output.classList.remove('typing-cursor');
-                    btn.innerHTML = 'Generar de Nuevo';
-                    btn.disabled = false;
-                    genIsTyping = false;
+            if (type === 'text') {
+                output.classList.add('typing-cursor', 'justify-start', 'items-start');
+                output.classList.remove('justify-center', 'items-center');
+                const originalHtml = btnText.innerHTML;
+                btnText.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i> Pensando...';
+
+                const generatedText = await fetchGeminiWithRetry(promptText);
+
+                btnText.innerHTML = '<i class="fas fa-keyboard mr-2"></i> Escribiendo...';
+
+                let i = 0;
+                let interval = setInterval(() => {
+                    output.textContent += generatedText.charAt(i);
+                    i++;
+                    if (i >= generatedText.length) {
+                        clearInterval(interval);
+                        output.classList.remove('typing-cursor');
+                        btnText.innerHTML = originalHtml;
+                        btnText.disabled = false;
+                        btnImg.disabled = false;
+                        genIsTyping = false;
+                    }
+                }, 15);
+            } 
+            else if (type === 'image') {
+                output.classList.remove('typing-cursor', 'justify-start', 'items-start');
+                output.classList.add('justify-center', 'items-center');
+                const originalHtml = btnImg.innerHTML;
+                btnImg.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i> Creando...';
+                
+                output.innerHTML = '<div class="flex flex-col items-center text-pink-400"><i class="fas fa-palette fa-3x fa-pulse mb-4"></i><span class="text-sm">Pintando píxeles...</span></div>';
+
+                const imageUrl = await fetchImagenWithRetry(promptText);
+
+                if (imageUrl) {
+                    output.innerHTML = `<img src="${imageUrl}" alt="Imagen generada" class="w-full h-full object-contain rounded-lg shadow-md border border-gray-700 animate-[fadeIn_0.5s_ease-out]">`;
+                } else {
+                    output.innerHTML = '<span class="text-red-400 text-center"><i class="fas fa-exclamation-triangle mb-2 text-2xl"></i><br>Error al generar la imagen.<br>Intenta con otro prompt (preferiblemente en inglés).</span>';
                 }
-            }, 40); // Velocidad de tipeo
+
+                btnImg.innerHTML = originalHtml;
+                btnText.disabled = false;
+                btnImg.disabled = false;
+                genIsTyping = false;
+            }
         }
 
         // C. Agentic AI
