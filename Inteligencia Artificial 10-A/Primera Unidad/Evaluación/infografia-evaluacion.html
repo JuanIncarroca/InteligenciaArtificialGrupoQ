@@ -1,1 +1,306 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Informe: Modelos de Clasificación - Equipo Q#</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        /* Estilos personalizados y Glassmorphism */
+        body {
+            margin: 0;
+            padding: 0;
+            background-color: #0f172a; /* Fondo oscuro base */
+            color: #e2e8f0;
+            font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+            overflow-x: hidden;
+        }
 
+        #bg-canvas {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            z-index: -1;
+        }
+
+        .glass-card {
+            background: rgba(30, 41, 59, 0.7);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 1rem;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.3);
+        }
+
+        .text-gradient {
+            background: linear-gradient(to right, #38bdf8, #818cf8, #c084fc);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+        
+        .img-placeholder {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: rgba(0, 0, 0, 0.3);
+            border: 2px dashed rgba(255, 255, 255, 0.2);
+            border-radius: 0.5rem;
+            padding: 2rem;
+            text-align: center;
+            color: #94a3b8;
+            font-style: italic;
+            margin: 1.5rem 0;
+            min-height: 200px;
+        }
+    </style>
+</head>
+<body class="antialiased">
+
+    <!-- Fondo Animado -->
+    <canvas id="bg-canvas"></canvas>
+
+    <!-- Contenido Principal -->
+    <div class="relative z-10 max-w-6xl mx-auto px-4 py-12">
+        
+        <!-- Cabecera / Portada -->
+        <header class="glass-card p-10 mb-12 text-center">
+            <div class="mb-6">
+                <h2 class="text-xl font-semibold text-sky-400 tracking-wider uppercase mb-2">Universidad Andina del Cusco</h2>
+                <h3 class="text-lg text-slate-300">Facultad de Ingeniería y Arquitectura<br>Escuela Profesional de Ingeniería de Sistemas</h3>
+            </div>
+            
+            <h1 class="text-4xl md:text-5xl font-bold mb-8 text-gradient">Aplicación de Modelos de Árboles de Decisión y Random Forest</h1>
+            
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-8 text-left max-w-4xl mx-auto bg-slate-800/50 p-6 rounded-lg border border-slate-700">
+                <div>
+                    <h4 class="text-sky-400 font-bold mb-2 border-b border-slate-600 pb-1">Información Académica</h4>
+                    <p><span class="font-semibold text-slate-300">Curso:</span> Artificial Intelligence 10-A</p>
+                    <p><span class="font-semibold text-slate-300">Docente:</span> Ing. Espetia Huamanga, Hugo</p>
+                    <p><span class="font-semibold text-slate-300">Equipo:</span> Q#</p>
+                    <p><span class="font-semibold text-slate-300">Año:</span> 2026</p>
+                </div>
+                <div>
+                    <h4 class="text-sky-400 font-bold mb-2 border-b border-slate-600 pb-1">Integrantes</h4>
+                    <ul class="list-disc list-inside space-y-1 text-slate-200">
+                        <li>Cardenas Quispe, Marco Antonio (100%)</li>
+                        <li>Incarroca Condori, Juan Jose (100%)</li>
+                        <li>Paucar Curasco, Rodrigo (100%)</li>
+                        <li>Yupayccana Kcana, Jamil Breison (SM) (100%)</li>
+                    </ul>
+                </div>
+            </div>
+        </header>
+
+        <!-- Menú de Navegación / Cabecera Separadora -->
+        <nav class="sticky top-4 z-50 glass-card my-8 p-4 flex flex-col md:flex-row justify-center gap-4 text-center border-t-4 border-slate-500">
+            <a href="#modelo-arbol" class="px-6 py-3 rounded-lg bg-sky-500/20 hover:bg-sky-500/40 text-sky-300 font-semibold transition-all hover:scale-105 border border-sky-500/30">1. Árbol de Decisión</a>
+            <a href="#modelo-rf" class="px-6 py-3 rounded-lg bg-indigo-500/20 hover:bg-indigo-500/40 text-indigo-300 font-semibold transition-all hover:scale-105 border border-indigo-500/30">2. Random Forest</a>
+            <a href="#modelo-ambos" class="px-6 py-3 rounded-lg bg-purple-500/20 hover:bg-purple-500/40 text-purple-300 font-semibold transition-all hover:scale-105 border border-purple-500/30">3. Análisis Comparativo</a>
+        </nav>
+
+        <!-- SECCIÓN 1: ÁRBOL DE DECISIÓN -->
+        <section id="modelo-arbol" class="glass-card p-8 mb-10">
+            <h2 class="text-3xl font-bold mb-6 text-sky-400 flex items-center">
+                <span class="bg-sky-500/20 p-2 rounded-lg mr-3">1</span>
+                Árbol de Decisión (Dataset Titanic)
+            </h2>
+            <div class="space-y-4 text-slate-300 leading-relaxed">
+                <p>
+                    En esta primera fase del proyecto, se implementó un modelo de <strong>Árbol de Decisión</strong> orientado a resolver un problema de clasificación binaria clásico: predecir la supervivencia de los pasajeros del Titanic basándose en características como la edad, el sexo, la clase del billete y la tarifa pagada.
+                </p>
+                
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div>
+                        <h3 class="text-xl font-semibold text-white mb-2">Metodología</h3>
+                        <p>El conjunto de datos original requirió un extenso preprocesamiento, incluyendo la imputación de edades faltantes (utilizando la mediana) y la codificación de variables categóricas (como el sexo de los pasajeros) utilizando técnicas de *Label Encoding* y *One-Hot Encoding*. Una vez preparados los datos, se entrenó un <code>DecisionTreeClassifier</code>.</p>
+                    </div>
+                    <div>
+                        <h3 class="text-xl font-semibold text-white mb-2">Funcionamiento del Modelo</h3>
+                        <p>El algoritmo particiona el espacio de características recursivamente, creando reglas de decisión simples del tipo "Si / Entonces". Por ejemplo, el nodo raíz del árbol típicamente realiza la primera división basándose en la característica más discriminante (generalmente el sexo del pasajero, dado el protocolo histórico de "mujeres y niños primero").</p>
+                    </div>
+                </div>
+
+                <div class="img-placeholder">
+                    <span></span>
+                </div>
+                
+                <p class="text-sm text-slate-400 border-l-4 border-sky-500 pl-4">
+                    <strong>Análisis Visual:</strong> Cada nodo en el árbol representa una decisión basada en una característica y un umbral. El color del nodo indica la clase mayoritaria (sobrevivió o no sobrevivió). La visualización nos permite rastrear exactamente qué conjunto de reglas condicionales lleva a una predicción específica, otorgándole a este modelo un nivel altísimo de interpretabilidad.
+                </p>
+            </div>
+        </section>
+
+        <!-- SECCIÓN 2: RANDOM FOREST -->
+        <section id="modelo-rf" class="glass-card p-8 mb-10 border-t-4 border-indigo-500">
+            <h2 class="text-3xl font-bold mb-6 text-indigo-400 flex items-center">
+                <span class="bg-indigo-500/20 p-2 rounded-lg mr-3">2</span>
+                Random Forest (Dataset Iris)
+            </h2>
+            <div class="space-y-4 text-slate-300 leading-relaxed">
+                <p>
+                    Para abordar problemas de clasificación multiclase y mejorar la robustez frente al sobreajuste (*overfitting*), se implementó un algoritmo <strong>Random Forest</strong> utilizando el famoso dataset Iris. Este dataset contiene 150 muestras de tres especies de flores, equilibradas equitativamente.
+                </p>
+
+                <div class="img-placeholder">
+                    <span></span>
+                </div>
+
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mt-6">
+                    <div class="bg-slate-800/40 p-5 rounded-lg">
+                        <h3 class="text-xl font-semibold text-indigo-300 mb-3">Ensemble Learning</h3>
+                        <p>A diferencia de un árbol individual, el Random Forest construye un "bosque" de múltiples árboles (en nuestro caso, configuramos <code>n_estimators=100</code>). Cada árbol se entrena con un subconjunto aleatorio de datos (*Bootstrap*) y características, y la predicción final se determina por votación mayoritaria, reduciendo drásticamente la varianza.</p>
+                    </div>
+                    <div class="bg-slate-800/40 p-5 rounded-lg">
+                        <h3 class="text-xl font-semibold text-indigo-300 mb-3">Rendimiento y Métricas</h3>
+                        <p>El modelo logró un rendimiento excepcional. Al tener un dataset balanceado, la métrica de *Accuracy* resulta altamente confiable.</p>
+                        <div class="img-placeholder mt-3 mb-0" style="min-height: 120px;">
+                            <span></span>
+                        </div>
+                    </div>
+                </div>
+
+                <h3 class="text-2xl font-semibold text-white mt-8 border-b border-slate-700 pb-2">Interpretabilidad y Estructura Interna</h3>
+                <p>Una de las ventajas clave del Random Forest es que nos permite calcular la <strong>Importancia de las Características</strong>. El modelo reveló matemáticamente que las dimensiones del pétalo (largo y ancho) son los indicadores más discriminantes para clasificar las especies, superando ampliamente a las medidas del sépalo.</p>
+
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mt-4">
+                    <div class="img-placeholder">
+                        <span></span>
+                    </div>
+                    <div class="img-placeholder">
+                        <span></span>
+                    </div>
+                </div>
+                
+                <p class="text-sm text-slate-400 border-l-4 border-indigo-500 pl-4 mt-2">
+                    <strong>Análisis Estructural:</strong> Aunque el bosque contiene 100 árboles, la visualización de un solo estimador base (con límite <code>max_depth=4</code>) demuestra cómo se alcanzan nodos hoja con impureza cero (`gini=0.0`) rápidamente, confirmando la facilidad con la que las medidas del pétalo separan las clases de flores.
+                </p>
+            </div>
+        </section>
+
+        <!-- SECCIÓN 3: AMBOS MODELOS -->
+        <section id="modelo-ambos" class="glass-card p-8 mb-10 border-t-4 border-purple-500">
+            <h2 class="text-3xl font-bold mb-6 text-purple-400 flex items-center">
+                <span class="bg-purple-500/20 p-2 rounded-lg mr-3">3</span>
+                Análisis Comparativo (Detección de Fraude)
+            </h2>
+            <div class="space-y-4 text-slate-300 leading-relaxed">
+                <p>
+                    Para llevar la comparación al máximo rigor, ambos algoritmos fueron probados en un entorno de alta complejidad industrial: la <strong>Detección de Fraudes con Tarjetas de Crédito</strong>. Este escenario presenta un desafío masivo conocido como <em>Desbalanceo Extremo de Clases</em> (donde los fraudes representan menos del 1% del total de las transacciones).
+                </p>
+
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mt-6">
+                    <div class="bg-slate-800/60 p-5 rounded-lg col-span-1 md:col-span-1 border border-slate-700">
+                        <h3 class="text-lg font-bold text-white mb-2">Desafío del Desbalanceo</h3>
+                        <p class="text-sm">En estos casos, un modelo puede alcanzar un 99% de Accuracy simplemente prediciendo que "no hay fraude" siempre. Por lo tanto, las métricas de evaluación tradicionales colapsan y debemos observar el <strong>Recall</strong> y la curva <strong>ROC-AUC</strong>.</p>
+                    </div>
+                    <div class="col-span-1 md:col-span-2">
+                        <div class="img-placeholder" style="margin: 0; min-height: 180px;">
+                            <span></span>
+                        </div>
+                    </div>
+                </div>
+
+                <h3 class="text-xl font-semibold text-white mt-6">Conclusiones de la Comparación</h3>
+                <ul class="list-disc list-inside space-y-3 mt-4 text-slate-300 ml-2">
+                    <li><strong class="text-purple-300">Árbol de Decisión (Solitario):</strong> Demostró ser rápido de entrenar y altamente interpretable. Sin embargo, en el entorno desbalanceado, tendió a sobreajustarse a la clase mayoritaria, perdiendo precisión en la detección efectiva de las transacciones fraudulentas sutiles.</li>
+                    <li><strong class="text-purple-300">Random Forest:</strong> Superó ampliamente al árbol individual en métricas críticas. Gracias a la agregación de múltiples árboles y la aleatoriedad inyectada en el entrenamiento, logró identificar patrones de fraude ocultos con una tasa significativamente menor de Falsos Positivos, demostrando por qué los métodos de ensamble son el estándar de la industria.</li>
+                </ul>
+            </div>
+        </section>
+
+        <footer class="text-center text-slate-500 text-sm mt-12 pb-8">
+            <p>Reporte académico interactivo generado para el curso de Artificial Intelligence 10-A. © 2026</p>
+            <p class="mt-2"><a href="#" class="text-sky-500 hover:text-sky-400 underline">Ver Repositorio en GitHub</a></p>
+        </footer>
+
+    </div>
+
+    <!-- Script para la animación de fondo (Nodos estilo Machine Learning) -->
+    <script>
+        const canvas = document.getElementById('bg-canvas');
+        const ctx = canvas.getContext('2d');
+
+        let width, height;
+        let particles = [];
+
+        // Ajustar el canvas al tamaño de la ventana
+        function resize() {
+            width = window.innerWidth;
+            height = window.innerHeight;
+            canvas.width = width;
+            canvas.height = height;
+        }
+
+        window.addEventListener('resize', resize);
+        resize();
+
+        // Clase Partícula (Nodo)
+        class Particle {
+            constructor() {
+                this.x = Math.random() * width;
+                this.y = Math.random() * height;
+                this.vx = (Math.random() - 0.5) * 0.5;
+                this.vy = (Math.random() - 0.5) * 0.5;
+                this.radius = Math.random() * 2 + 1;
+            }
+
+            update() {
+                this.x += this.vx;
+                this.y += this.vy;
+
+                // Rebotar en los bordes
+                if (this.x < 0 || this.x > width) this.vx *= -1;
+                if (this.y < 0 || this.y > height) this.vy *= -1;
+            }
+
+            draw() {
+                ctx.beginPath();
+                ctx.arc(this.x, this.y, this.radius, 0, Math.PI * 2);
+                ctx.fillStyle = 'rgba(56, 189, 248, 0.5)'; // Color celeste de Tailwind
+                ctx.fill();
+            }
+        }
+
+        // Crear partículas
+        const particleCount = window.innerWidth < 768 ? 40 : 100; // Menos partículas en móvil
+        for (let i = 0; i < particleCount; i++) {
+            particles.push(new Particle());
+        }
+
+        // Bucle de animación
+        function animate() {
+            ctx.clearRect(0, 0, width, height);
+
+            // Actualizar y dibujar partículas
+            for (let i = 0; i < particles.length; i++) {
+                particles[i].update();
+                particles[i].draw();
+
+                // Conectar partículas cercanas
+                for (let j = i + 1; j < particles.length; j++) {
+                    const dx = particles[i].x - particles[j].x;
+                    const dy = particles[i].y - particles[j].y;
+                    const distance = Math.sqrt(dx * dx + dy * dy);
+
+                    if (distance < 120) {
+                        ctx.beginPath();
+                        ctx.moveTo(particles[i].x, particles[i].y);
+                        ctx.lineTo(particles[j].x, particles[j].y);
+                        // La opacidad de la línea depende de la distancia
+                        const opacity = 1 - (distance / 120);
+                        ctx.strokeStyle = `rgba(148, 163, 184, ${opacity * 0.2})`;
+                        ctx.lineWidth = 1;
+                        ctx.stroke();
+                    }
+                }
+            }
+
+            requestAnimationFrame(animate);
+        }
+
+        animate();
+    </script>
+</body>
+</html>
