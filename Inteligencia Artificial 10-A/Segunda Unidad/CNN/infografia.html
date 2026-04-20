@@ -3,269 +3,364 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Infografía: Entrenamiento de Modelos CNN</title>
+    <title>Infografía IA: Redes Neuronales Convolucionales</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
-        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&display=swap');
+        @import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&family=Inter:wght@300;400;600&display=swap');
         
+        :root {
+            --primary: #38bdf8;
+            --secondary: #818cf8;
+            --accent: #c084fc;
+            --bg-dark: #020617;
+        }
+
         body {
             font-family: 'Inter', sans-serif;
-            background: #0f172a;
+            background-color: var(--bg-dark);
             color: #f1f5f9;
+            overflow-x: hidden;
+        }
+
+        h1, h2, h3 { font-family: 'Space Grotesk', sans-serif; }
+
+        /* Fondo Animado de Red Neuronal */
+        #network-canvas {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: -1;
+            opacity: 0.4;
         }
 
         .glass-card {
-            background: rgba(30, 41, 59, 0.7);
-            backdrop-filter: blur(10px);
-            border: 1px solid rgba(255, 255, 255, 0.1);
-            border-radius: 1rem;
-            transition: transform 0.3s ease;
-        }
-
-        .glass-card:hover {
-            transform: translateY(-5px);
-            border-color: #38bdf8;
-        }
-
-        .step-number {
-            background: linear-gradient(135deg, #38bdf8, #818cf8);
-            width: 40px;
-            height: 40px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            border-radius: 50%;
-            font-weight: bold;
-        }
-
-        .gradient-text {
-            background: linear-gradient(90deg, #38bdf8, #818cf8);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-        }
-
-        .model-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
-            gap: 1.5rem;
-        }
-
-        .progress-bar {
-            height: 8px;
-            background: #334155;
-            border-radius: 4px;
+            background: rgba(15, 23, 42, 0.6);
+            backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            border-radius: 1.5rem;
+            transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            position: relative;
             overflow: hidden;
         }
 
-        .progress-fill {
-            height: 100%;
-            background: linear-gradient(90deg, #38bdf8, #6366f1);
+        .glass-card:hover {
+            transform: translateY(-8px);
+            border-color: var(--primary);
+            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(56, 189, 248, 0.1);
         }
 
-        @keyframes pulse {
-            0%, 100% { opacity: 1; }
-            50% { opacity: 0.5; }
+        .dataset-img {
+            width: 100%;
+            height: 120px;
+            object-fit: cover;
+            border-radius: 0.75rem;
+            margin-bottom: 1rem;
+            filter: grayscale(30%) brightness(0.8);
+            transition: 0.3s;
         }
 
-        .status-dot {
-            width: 10px;
-            height: 10px;
-            background: #22c55e;
-            border-radius: 50%;
-            display: inline-block;
-            margin-right: 8px;
-            animation: pulse 2s infinite;
+        .glass-card:hover .dataset-img {
+            filter: grayscale(0%) brightness(1);
+        }
+
+        .gradient-border {
+            position: relative;
+            background: linear-gradient(var(--bg-dark), var(--bg-dark)) padding-box,
+                        linear-gradient(135deg, var(--primary), var(--secondary)) border-box;
+            border: 2px solid transparent;
+        }
+
+        .step-pill {
+            background: rgba(56, 189, 248, 0.1);
+            border: 1px solid rgba(56, 189, 248, 0.2);
+            padding: 2px 10px;
+            border-radius: 9999px;
+            font-size: 0.7rem;
+            font-weight: 600;
+            color: var(--primary);
+        }
+
+        .floating {
+            animation: float 6s ease-in-out infinite;
+        }
+
+        @keyframes float {
+            0%, 100% { transform: translateY(0px); }
+            50% { transform: translateY(-20px); }
+        }
+
+        .glow-text {
+            text-shadow: 0 0 15px rgba(56, 189, 248, 0.5);
         }
     </style>
 </head>
-<body class="p-4 md:p-8">
-    <div class="max-w-6xl mx-auto">
-        <!-- Header -->
-        <header class="text-center mb-12">
-            <h1 class="text-4xl md:text-5xl font-extrabold mb-4">Entrenamiento de Modelos <span class="gradient-text">CNN</span></h1>
-            <p class="text-slate-400 text-lg">Reporte de Entrenamiento - Equipo Q# | Taller 2.2 Inteligencia Artificial</p>
-            <div class="mt-4 flex justify-center items-center space-x-4">
-                <span class="bg-slate-800 px-3 py-1 rounded-full text-xs border border-slate-700">Versión: 2026-I</span>
-                <span class="bg-slate-800 px-3 py-1 rounded-full text-xs border border-slate-700">Modelos: 4 datasets</span>
+<body class="antialiased">
+    <!-- Canvas Animado -->
+    <canvas id="network-canvas"></canvas>
+
+    <div class="max-w-7xl mx-auto px-4 py-12 relative">
+        <!-- Encabezado Estilo Dashboard -->
+        <header class="text-center mb-20">
+            <div class="inline-block px-4 py-1 rounded-full border border-sky-500/30 bg-sky-500/10 text-sky-400 text-sm font-semibold mb-6 animate-pulse">
+                <i class="fas fa-microchip mr-2"></i> INGENIERÍA DE SISTEMAS - TALLER 2.2
             </div>
+            <h1 class="text-5xl md:text-7xl font-bold mb-6 tracking-tight">
+                Vision Artificial <br>
+                <span class="text-transparent bg-clip-text bg-gradient-to-r from-sky-400 via-indigo-400 to-purple-400 glow-text">Deep Learning CNN</span>
+            </h1>
+            <p class="text-slate-400 text-xl max-w-2xl mx-auto font-light">
+                Análisis comparativo de 4 arquitecturas neuronales diseñadas para el reconocimiento de patrones visuales complejos.
+            </p>
         </header>
 
-        <!-- Seccion 1: Pipeline de Datos -->
-        <section class="mb-12">
-            <div class="flex items-center mb-6">
-                <h2 class="text-2xl font-bold border-l-4 border-sky-500 pl-4">Pipeline de Preparación de Datos</h2>
-            </div>
-            <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
-                <div class="glass-card p-6 flex flex-col items-center text-center">
-                    <div class="step-number mb-4 text-white">1</div>
-                    <i class="fas fa-expand-arrows-alt text-3xl mb-4 text-sky-400"></i>
-                    <h3 class="font-bold mb-2">Reshape</h3>
-                    <p class="text-sm text-slate-400">Ajuste de dimensiones a (28,28,1) para escala de grises y (32,32,3) para RGB.</p>
+        <!-- Sección: Pipeline Detallado -->
+        <section class="mb-24">
+            <h2 class="text-3xl font-bold mb-10 flex items-center">
+                <span class="bg-sky-500 w-10 h-10 rounded-lg flex items-center justify-center mr-4">
+                    <i class="fas fa-stream text-white"></i>
+                </span>
+                Flujo de Entrenamiento (Pipeline)
+            </h2>
+            <div class="grid grid-cols-1 md:grid-cols-4 gap-6">
+                <div class="glass-card p-6 border-l-4 border-sky-400">
+                    <div class="text-sky-400 text-4xl mb-4"><i class="fas fa-database"></i></div>
+                    <h3 class="font-bold text-lg mb-2">Adquisición</h3>
+                    <p class="text-sm text-slate-400">Carga de datasets desde Keras/TensorFlow. Separación en 60,000 imágenes de entrenamiento y 10,000 de test.</p>
                 </div>
-                <div class="glass-card p-6 flex flex-col items-center text-center">
-                    <div class="step-number mb-4 text-white">2</div>
-                    <i class="fas fa-balance-scale text-3xl mb-4 text-sky-400"></i>
-                    <h3 class="font-bold mb-2">Normalización</h3>
-                    <p class="text-sm text-slate-400">Escalado de píxeles de [0, 255] a [0, 1] mediante división por 255.0.</p>
+                <div class="glass-card p-6 border-l-4 border-indigo-400">
+                    <div class="text-indigo-400 text-4xl mb-4"><i class="fas fa-vector-square"></i></div>
+                    <h3 class="font-bold text-lg mb-2">Preprocesamiento</h3>
+                    <p class="text-sm text-slate-400">Reshape a Tensores 4D e implementación de One-Hot Encoding para etiquetas categóricas.</p>
                 </div>
-                <div class="glass-card p-6 flex flex-col items-center text-center">
-                    <div class="step-number mb-4 text-white">3</div>
-                    <i class="fas fa-tags text-3xl mb-4 text-sky-400"></i>
-                    <h3 class="font-bold mb-2">One-Hot Encoding</h3>
-                    <p class="text-sm text-slate-400">Conversión de etiquetas categóricas para la función de pérdida categorical_crossentropy.</p>
+                <div class="glass-card p-6 border-l-4 border-purple-400">
+                    <div class="text-purple-400 text-4xl mb-4"><i class="fas fa-sliders-h"></i></div>
+                    <h3 class="font-bold text-lg mb-2">Escalado</h3>
+                    <p class="text-sm text-slate-400">Normalización de pixeles de 0-255 a 0.0-1.0 para estabilizar el entrenamiento (Gradiente).</p>
+                </div>
+                <div class="glass-card p-6 border-l-4 border-pink-400">
+                    <div class="text-pink-400 text-4xl mb-4"><i class="fas fa-brain"></i></div>
+                    <h3 class="font-bold text-lg mb-2">Inferencia</h3>
+                    <h3 class="font-bold text-lg mb-2">Entrenamiento</h3>
+                    <p class="text-sm text-slate-400">Compilación con optimizador 'adam' y función de pérdida 'categorical_crossentropy'.</p>
                 </div>
             </div>
         </section>
 
-        <!-- Seccion 2: Los 4 Modelos Entrenados -->
-        <section class="mb-12">
-            <div class="flex items-center mb-6">
-                <h2 class="text-2xl font-bold border-l-4 border-sky-500 pl-4">Resultados por Dataset</h2>
-            </div>
-            
-            <div class="model-grid">
-                <!-- Modelo 1: Fashion MNIST -->
-                <div class="glass-card p-6 border-t-4 border-t-green-500">
-                    <div class="flex justify-between items-start mb-4">
-                        <span class="text-xs font-bold text-green-500 uppercase tracking-widest">Nivel: Fácil</span>
-                        <i class="fas fa-tshirt text-xl text-slate-500"></i>
+        <!-- Sección: Análisis de Datasets -->
+        <section class="mb-24">
+            <h2 class="text-3xl font-bold mb-10 flex items-center">
+                <span class="bg-indigo-500 w-10 h-10 rounded-lg flex items-center justify-center mr-4">
+                    <i class="fas fa-project-diagram text-white"></i>
+                </span>
+                Modelos y Benchmarks
+            </h2>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
+                <!-- Fashion MNIST -->
+                <div class="glass-card p-6 group">
+                    <img src="https://images.unsplash.com/photo-1523381210434-271e8be1f52b?q=80&w=400&auto=format&fit=crop" alt="Ropa" class="dataset-img">
+                    <div class="flex justify-between items-center mb-2">
+                        <span class="step-pill">NIVEL 1</span>
+                        <span class="text-emerald-400 font-bold">90.2%</span>
                     </div>
-                    <h3 class="text-xl font-bold mb-2">Fashion-MNIST</h3>
-                    <p class="text-sm text-slate-400 mb-4 italic">Clasificación de prendas de vestir y calzado.</p>
-                    <div class="space-y-3">
-                        <div>
-                            <div class="flex justify-between text-xs mb-1">
-                                <span>Precisión (CNN)</span>
-                                <span class="text-green-400 font-bold">90%</span>
-                            </div>
-                            <div class="progress-bar"><div class="progress-fill" style="width: 90%"></div></div>
-                        </div>
-                        <ul class="text-xs text-slate-300 space-y-1">
-                            <li>• Arquitectura simple de 2 capas Conv.</li>
-                            <li>• Dropout de 0.25 para regularizar.</li>
+                    <h3 class="text-xl font-bold mb-3">Fashion-MNIST</h3>
+                    <p class="text-xs text-slate-400 mb-4">Reconocimiento de 10 clases de prendas en escala de grises.</p>
+                    <div class="bg-slate-900/50 p-3 rounded-lg">
+                        <p class="text-[10px] text-slate-500 uppercase font-bold mb-2">Arquitectura</p>
+                        <ul class="text-[11px] space-y-1 text-slate-300">
+                            <li>• Conv2D(32, (3,3))</li>
+                            <li>• MaxPooling(2,2)</li>
+                            <li>• Dropout(0.2)</li>
                         </ul>
                     </div>
                 </div>
 
-                <!-- Modelo 2: CIFAR-10 -->
-                <div class="glass-card p-6 border-t-4 border-t-yellow-500">
-                    <div class="flex justify-between items-start mb-4">
-                        <span class="text-xs font-bold text-yellow-500 uppercase tracking-widest">Nivel: Intermedio-Bajo</span>
-                        <i class="fas fa-car text-xl text-slate-500"></i>
+                <!-- CIFAR-10 -->
+                <div class="glass-card p-6 group">
+                    <img src="https://images.unsplash.com/photo-1546410531-bb4caa6b424d?q=80&w=400&auto=format&fit=crop" alt="Objetos" class="dataset-img">
+                    <div class="flex justify-between items-center mb-2">
+                        <span class="step-pill">NIVEL 2</span>
+                        <span class="text-yellow-400 font-bold">71.5%</span>
                     </div>
-                    <h3 class="text-xl font-bold mb-2">CIFAR-10</h3>
-                    <p class="text-sm text-slate-400 mb-4 italic">Objetos y animales en 3 canales (RGB).</p>
-                    <div class="space-y-3">
-                        <div>
-                            <div class="flex justify-between text-xs mb-1">
-                                <span>Precisión (CNN)</span>
-                                <span class="text-yellow-400 font-bold">71%</span>
-                            </div>
-                            <div class="progress-bar"><div class="progress-fill" style="width: 71%"></div></div>
-                        </div>
-                        <ul class="text-xs text-slate-300 space-y-1">
-                            <li>• Invarianza espacial requerida.</li>
-                            <li>• Capas de Pooling críticas por ruido.</li>
+                    <h3 class="text-xl font-bold mb-3">CIFAR-10</h3>
+                    <p class="text-xs text-slate-400 mb-4">Manejo de 3 canales RGB (Aviones, coches, gatos...).</p>
+                    <div class="bg-slate-900/50 p-3 rounded-lg">
+                        <p class="text-[10px] text-slate-500 uppercase font-bold mb-2">Arquitectura</p>
+                        <ul class="text-[11px] space-y-1 text-slate-300">
+                            <li>• Filtros múltiples (32, 64)</li>
+                            <li>• Invarianza Espacial</li>
+                            <li>• Batch Normalization</li>
                         </ul>
                     </div>
                 </div>
 
-                <!-- Modelo 3: SVHN -->
-                <div class="glass-card p-6 border-t-4 border-t-orange-500">
-                    <div class="flex justify-between items-start mb-4">
-                        <span class="text-xs font-bold text-orange-500 uppercase tracking-widest">Nivel: Intermedio</span>
-                        <i class="fas fa-hashtag text-xl text-slate-500"></i>
+                <!-- SVHN -->
+                <div class="glass-card p-6 group">
+                    <img src="https://images.unsplash.com/photo-1541185933-ef5d8ed016c2?q=80&w=400&auto=format&fit=crop" alt="Números de calle" class="dataset-img">
+                    <div class="flex justify-between items-center mb-2">
+                        <span class="step-pill">NIVEL 3</span>
+                        <span class="text-orange-400 font-bold">77.3%</span>
                     </div>
-                    <h3 class="text-xl font-bold mb-2">SVHN</h3>
-                    <p class="text-sm text-slate-400 mb-4 italic">Números reales de Street View.</p>
-                    <div class="space-y-3">
-                        <div>
-                            <div class="flex justify-between text-xs mb-1">
-                                <span>Precisión (CNN)</span>
-                                <span class="text-orange-400 font-bold">77%</span>
-                            </div>
-                            <div class="progress-bar"><div class="progress-fill" style="width: 77%"></div></div>
-                        </div>
-                        <ul class="text-xs text-slate-300 space-y-1">
-                            <li>• Reto de iluminación y fondos reales.</li>
-                            <li>• Supera al Perceptrón por más del 15%.</li>
+                    <h3 class="text-xl font-bold mb-3">SVHN (Numbers)</h3>
+                    <p class="text-xs text-slate-400 mb-4">Números de casas extraídos de Google Street View.</p>
+                    <div class="bg-slate-900/50 p-3 rounded-lg">
+                        <p class="text-[10px] text-slate-500 uppercase font-bold mb-2">Arquitectura</p>
+                        <ul class="text-[11px] space-y-1 text-slate-300">
+                            <li>• Manejo de brillo real</li>
+                            <li>• Pooling agresivo</li>
+                            <li>• Softmax 10 clases</li>
                         </ul>
                     </div>
                 </div>
 
-                <!-- Modelo 4: EMNIST -->
-                <div class="glass-card p-6 border-t-4 border-t-red-500">
-                    <div class="flex justify-between items-start mb-4">
-                        <span class="text-xs font-bold text-red-500 uppercase tracking-widest">Nivel: Intermedio-Alto</span>
-                        <i class="fas fa-font text-xl text-slate-500"></i>
+                <!-- EMNIST -->
+                <div class="glass-card p-6 group">
+                    <img src="https://images.unsplash.com/photo-1503551723145-6c040742065b?q=80&w=400&auto=format&fit=crop" alt="Letras y números" class="dataset-img">
+                    <div class="flex justify-between items-center mb-2">
+                        <span class="step-pill">NIVEL 4</span>
+                        <span class="text-sky-400 font-bold">88.9%</span>
                     </div>
-                    <h3 class="text-xl font-bold mb-2">EMNIST</h3>
-                    <p class="text-sm text-slate-400 mb-4 italic">Letras y números balanceados (47 clases).</p>
-                    <div class="space-y-3">
-                        <div>
-                            <div class="flex justify-between text-xs mb-1">
-                                <span>Precisión (CNN)</span>
-                                <span class="text-red-400 font-bold">88%</span>
-                            </div>
-                            <div class="progress-bar"><div class="progress-fill" style="width: 88%"></div></div>
-                        </div>
-                        <ul class="text-xs text-slate-300 space-y-1">
-                            <li>• Mayor cantidad de parámetros.</li>
-                            <li>• Capacidad robusta para OCR.</li>
+                    <h3 class="text-xl font-bold mb-3">EMNIST</h3>
+                    <p class="text-xs text-slate-400 mb-4">Letras mayúsculas, minúsculas y dígitos (47 clases).</p>
+                    <div class="bg-slate-900/50 p-3 rounded-lg">
+                        <p class="text-[10px] text-slate-500 uppercase font-bold mb-2">Arquitectura</p>
+                        <ul class="text-[11px] space-y-1 text-slate-300">
+                            <li>• Capacidad OCR sólida</li>
+                            <li>• Red Neuronal Profunda</li>
+                            <li>• Dropout(0.5) final</li>
                         </ul>
                     </div>
                 </div>
             </div>
         </section>
 
-        <!-- Seccion 3: Arquitectura Técnica -->
-        <section class="grid grid-cols-1 md:grid-cols-2 gap-8 items-center mb-12">
-            <div class="glass-card p-8">
-                <h3 class="text-2xl font-bold mb-4">Arquitectura de la Solución</h3>
-                <p class="text-slate-400 mb-6">Se implementó una red secuencial con la siguiente estructura base para maximizar la extracción de características:</p>
-                <div class="space-y-4">
-                    <div class="flex items-center p-3 bg-slate-800 rounded border-l-4 border-blue-500">
-                        <span class="font-mono text-xs mr-4 opacity-50">01</span>
-                        <div>
-                            <p class="text-sm font-bold">Conv2D + ReLU</p>
-                            <p class="text-xs text-slate-500">Extracción de bordes y patrones simples.</p>
-                        </div>
-                    </div>
-                    <div class="flex items-center p-3 bg-slate-800 rounded border-l-4 border-purple-500">
-                        <span class="font-mono text-xs mr-4 opacity-50">02</span>
-                        <div>
-                            <p class="text-sm font-bold">MaxPooling2D</p>
-                            <p class="text-xs text-slate-500">Reducción de dimensionalidad e invarianza espacial.</p>
-                        </div>
-                    </div>
-                    <div class="flex items-center p-3 bg-slate-800 rounded border-l-4 border-pink-500">
-                        <span class="font-mono text-xs mr-4 opacity-50">03</span>
-                        <div>
-                            <p class="text-sm font-bold">Flatten + Dense (Softmax)</p>
-                            <p class="text-xs text-slate-500">Capa de salida con distribución de probabilidad.</p>
-                        </div>
-                    </div>
-                </div>
-            </div>
-            
+        <!-- Sección: Comparativa Técnica vs Perceptrón -->
+        <section class="grid grid-cols-1 lg:grid-cols-2 gap-12 mb-24">
             <div class="space-y-6">
-                <div class="p-6 bg-blue-500/10 rounded-xl border border-blue-500/20">
-                    <h4 class="font-bold text-blue-400 mb-2"><i class="fas fa-info-circle mr-2"></i>Conclusión Clave</h4>
-                    <p class="text-sm">El <strong>Perceptrón Multicapa</strong> demostró ser ineficiente frente a las <strong>CNN</strong> (obteniendo entre un 10-20% menos de precisión), especialmente en datasets con ruido como SVHN y CIFAR-10.</p>
+                <h2 class="text-3xl font-bold mb-6">CNN vs Perceptrón Multicapa (MLP)</h2>
+                <div class="p-6 bg-slate-900/40 rounded-2xl border border-slate-800">
+                    <div class="flex items-start space-x-4 mb-4">
+                        <div class="bg-red-500/20 p-3 rounded-lg text-red-400">
+                            <i class="fas fa-times-circle text-2xl"></i>
+                        </div>
+                        <div>
+                            <h4 class="font-bold text-lg">Debilidad del Perceptrón</h4>
+                            <p class="text-sm text-slate-400">Obtuvo un **15-20% menos** de precisión. Pierde la relación espacial al "aplanar" la imagen prematuramente, ignorando la estructura bidimensional del objeto.</p>
+                        </div>
+                    </div>
+                    <div class="flex items-start space-x-4">
+                        <div class="bg-green-500/20 p-3 rounded-lg text-green-400">
+                            <i class="fas fa-check-circle text-2xl"></i>
+                        </div>
+                        <div>
+                            <h4 class="font-bold text-lg">Fortaleza de la CNN</h4>
+                            <p class="text-sm text-slate-400">La **convolución** actúa como un escáner que detecta bordes y texturas localmente, permitiendo clasificar correctamente aunque el objeto esté ligeramente movido (Invarianza).</p>
+                        </div>
+                    </div>
                 </div>
-                <div class="p-6 bg-emerald-500/10 rounded-xl border border-emerald-500/20">
-                    <h4 class="font-bold text-emerald-400 mb-2"><i class="fas fa-lightbulb mr-2"></i>Sugerencia de Mejora</h4>
-                    <p class="text-sm">Implementar <strong>Data Augmentation</strong> (rotación y brillo) para SVHN y <strong>Transfer Learning</strong> con arquitecturas como ResNet para datasets más complejos.</p>
+            </div>
+
+            <div class="glass-card gradient-border p-8 flex flex-col justify-center">
+                <h3 class="text-2xl font-bold mb-4">Impacto de la Dimensionalidad</h3>
+                <p class="text-slate-300 mb-6 text-sm leading-relaxed">
+                    El paso de 1 canal (Fashion-MNIST) a 3 canales (CIFAR/SVHN) aumenta drásticamente la carga computacional. Se requiere una mayor cantidad de filtros para ignorar el **ruido cromático** y enfocarse en la morfología de los objetos.
+                </p>
+                <div class="grid grid-cols-3 gap-4">
+                    <div class="text-center">
+                        <div class="text-2xl font-bold text-sky-400">1x</div>
+                        <div class="text-[10px] text-slate-500">Grises</div>
+                    </div>
+                    <div class="text-center">
+                        <div class="text-2xl font-bold text-indigo-400">3x</div>
+                        <div class="text-[10px] text-slate-500">RGB Color</div>
+                    </div>
+                    <div class="text-center">
+                        <div class="text-2xl font-bold text-purple-400">47+</div>
+                        <div class="text-[10px] text-slate-500">Clases</div>
+                    </div>
                 </div>
             </div>
         </section>
 
-        <!-- Footer -->
-        <footer class="text-center text-slate-500 text-sm pb-12 border-t border-slate-800 pt-8">
-            <p>© 2026 Universidad Andina del Cusco - Ingeniería de Sistemas</p>
-            <p>IA 10-A | Equipo Q# | Desarrollado con HTML/CSS/JS</p>
+        <!-- Footer Footer -->
+        <footer class="text-center py-10 border-t border-slate-800">
+            <div class="flex justify-center space-x-8 mb-6">
+                <div class="flex flex-col">
+                    <span class="text-xs text-slate-500 uppercase font-bold tracking-widest">Docente</span>
+                    <span class="text-sky-400">Hugo Espetia H.</span>
+                </div>
+                <div class="flex flex-col">
+                    <span class="text-xs text-slate-500 uppercase font-bold tracking-widest">Equipo</span>
+                    <span class="text-indigo-400">Q# (Sistemas)</span>
+                </div>
+                <div class="flex flex-col">
+                    <span class="text-xs text-slate-500 uppercase font-bold tracking-widest">Localización</span>
+                    <span class="text-purple-400">Cusco, Perú</span>
+                </div>
+            </div>
+            <p class="text-slate-600 text-xs">Desarrollado como prototipo de visualización de métricas de IA v2.0</p>
         </footer>
     </div>
+
+    <script>
+        // Lógica del fondo animado (Red Neuronal)
+        const canvas = document.getElementById('network-canvas');
+        const ctx = canvas.getContext('2d');
+        let points = [];
+
+        function init() {
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight;
+            points = [];
+            for (let i = 0; i < 80; i++) {
+                points.push({
+                    x: Math.random() * canvas.width,
+                    y: Math.random() * canvas.height,
+                    vx: (Math.random() - 0.5) * 0.5,
+                    vy: (Math.random() - 0.5) * 0.5
+                });
+            }
+        }
+
+        function draw() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            ctx.fillStyle = '#38bdf8';
+            ctx.strokeStyle = '#38bdf8';
+
+            points.forEach((p, i) => {
+                p.x += p.vx;
+                p.y += p.vy;
+
+                if (p.x < 0 || p.x > canvas.width) p.vx *= -1;
+                if (p.y < 0 || p.y > canvas.height) p.vy *= -1;
+
+                ctx.beginPath();
+                ctx.arc(p.x, p.y, 1.5, 0, Math.PI * 2);
+                ctx.fill();
+
+                for (let j = i + 1; j < points.length; j++) {
+                    const p2 = points[j];
+                    const dist = Math.sqrt((p.x - p2.x)**2 + (p.y - p2.y)**2);
+                    if (dist < 150) {
+                        ctx.globalAlpha = 1 - (dist / 150);
+                        ctx.lineWidth = 0.5;
+                        ctx.beginPath();
+                        ctx.moveTo(p.x, p.y);
+                        ctx.lineTo(p2.x, p2.y);
+                        ctx.stroke();
+                        ctx.globalAlpha = 1;
+                    }
+                }
+            });
+            requestAnimationFrame(draw);
+        }
+
+        window.addEventListener('resize', init);
+        init();
+        draw();
+    </script>
 </body>
 </html>
